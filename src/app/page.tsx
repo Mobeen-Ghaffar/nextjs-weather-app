@@ -6,13 +6,73 @@ import axios from 'axios';
 import { format,parseISO } from 'date-fns';
 import Container from "@/components/Container";
 import { convertKelvinToCelsius } from "@/utils/convertKelvinToCelsius";
+import WeatherIcon from "@/components/WeatherIcon";
+import { getDayOrNightIcon } from "@/utils/getDayorNightIcon";
+
+interface WeatherDetail {
+  dt: number;
+  main: {
+    temp: number;
+    feels_like: number;
+    temp_min: number;
+    temp_max: number;
+    pressure: number;
+    sea_level: number;
+    grnd_level: number;
+    humidity: number;
+    temp_kf: number;
+  };
+  weather: {
+    id: number;
+    main: string;
+    description: string;
+    icon: string;
+  }[];
+  clouds: {
+    all: number;
+  };
+  wind: {
+    speed: number;
+    deg: number;
+    gust: number;
+  };
+  visibility: number;
+  pop: number;
+  sys: {
+    pod: string;
+  };
+  dt_txt: string;
+}
+
+interface WeatherData {
+  cod: string;
+  message: number;
+  cnt: number;
+  list: WeatherDetail[];
+  city: {
+    id: number;
+    name: string;
+    coord: {
+      lat: number;
+      lon: number;
+    };
+    country: string;
+    population: number;
+    timezone: number;
+    sunrise: number;
+    sunset: number;
+  };
+}
+
 // https://api.openweathermap.org/data/2.5/forecast?q=${place}&appid=${process.env.NEXT_PUBLIC_WEATHER_KEY}&cnt=56
 export default function Home() {
-    const { isLoading, error, data } = useQuery({
+    const { isLoading, error, data } = useQuery<WeatherData>({
     queryKey: ['repoData'],
       queryFn: async () => {
+        // `https://api.openweathermap.org/data/2.5/forecast?q=${place}&appid=${process.env.NEXT_PUBLIC_WEATHER_KEY}&cnt=56`
+     
 
-        const { data } = await axios.get(`https://api.openweathermap.org/data/2.5/forecast?q=lahore&appid=${process.env.NEXT_PUBLIC_WEATHER_KEY}&cnt=2`);
+        const { data } = await axios.get(`https://api.openweathermap.org/data/2.5/forecast?q=lahore&appid=${process.env.NEXT_PUBLIC_WEATHER_KEY}&cnt=56`);
         return data;
       }
       ,
@@ -40,7 +100,9 @@ export default function Home() {
               <p>{format(parseISO(firstData?.dt_txt ?? ""),"EEEE")}</p>
               <p className="text-lg">({format(parseISO(firstData?.dt_txt ?? ""),"dd-MM-yyyy")})</p>
             </h2>
+
             <Container className="gap-10 px-6 items-center">
+              {/* temperature */}
               <div className="flex flex-col px-4">
                 <span className="text-5xl">
                   {convertKelvinToCelsius(firstData?.main.temp ?? 296.37)}°
@@ -58,6 +120,21 @@ export default function Home() {
                     {convertKelvinToCelsius(firstData?.main.temp_max ?? 0)}°↑
                   </span>
                 </p>
+              </div>
+              {/* time and weather icon */}
+              <div className="flex gap-10 sm:gap-16 overflow-x-auto w-full justify-between pr-3">
+                {data?.list.map((d,i) => (
+                  <div
+                    key={i}
+                    className="flex flex-col justify-between gap-2 items-center text-xs font-semibold"
+                  >
+                    <p className="whitespace-nowrap">
+                      {format(parseISO(d.dt_txt),"h:mm a")}
+                    </p>
+                    <WeatherIcon iconName={getDayOrNightIcon(d.weather[0].icon,d.dt_txt)} />
+                    <p>{convertKelvinToCelsius(d?.main.temp ?? 0)}°</p>
+                  </div>
+                ))}
               </div>
             </Container>
           </div>
