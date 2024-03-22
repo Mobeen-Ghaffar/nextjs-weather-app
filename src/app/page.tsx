@@ -93,16 +93,23 @@ export default function Home() {
       )
     )
   ];
-
+  
   // Filtering data to get the first entry after 6 AM for each unique date
   const firstDataForEachDate = uniqueDates.map((date) => {
-    return data?.list.find((entry) => {
+    // Filter entries for the current date
+    const entriesForDate = data?.list.filter((entry) => {
       const entryDate = new Date(entry.dt * 1000).toISOString().split("T")[0];
       const entryTime = new Date(entry.dt * 1000).getHours();
       return entryDate === date && entryTime >= 6;
-    });
+    })??[];
+
+    // If there are entries for the date, return the earliest one
+    if (entriesForDate?.length > 0) {
+      return entriesForDate?.[0];
+    }
   });
-  console.log(firstDataForEachDate);
+  const filteredFirstDataForEachDate = firstDataForEachDate.filter((entry) => entry !== undefined);
+
   if (isLoading) {
     return (
       <div className="flex items-center min-h-screen justify-center">
@@ -188,7 +195,7 @@ export default function Home() {
         <section className="flex w-full flex-col gap-4">
           
           <p className="text-2xl">Forcast (7 days)</p>
-          {firstDataForEachDate.map((d, i) => (
+          {filteredFirstDataForEachDate.map((d, i) => (
             <ForecastWeatherDetail
               key={i}
               description={d?.weather[0].description ?? ""}
